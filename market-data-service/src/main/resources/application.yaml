@@ -1,3 +1,78 @@
 spring:
   application:
     name: market-data-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/market_data}
+    username: ${DB_USER:market_data}
+    password: ${DB_PASSWORD:market_data}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  batch:
+    jdbc:
+      initialize-schema: always
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    properties:
+      security.protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      marketDataProviders:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 20s
+        permittedNumberOfCallsInHalfOpenState: 5
+  retry:
+    instances:
+      marketDataProviders:
+        maxAttempts: 3
+        waitDuration: 300ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+  timelimiter:
+    instances:
+      marketDataProviders:
+        timeoutDuration: 2s
+
+app:
+  market-data:
+    symbols: ${MARKET_DATA_SYMBOLS:PETR4,VALE3,ITUB4,BBDC4}
+    job:
+      enabled: ${MARKET_DATA_JOB_ENABLED:true}
+      fixed-delay: ${MARKET_DATA_JOB_FIXED_DELAY:PT5M}
+    providers:
+      active: ${MARKET_DATA_PROVIDERS_ACTIVE:stubA,stubB}
+  kafka:
+    topics:
+      market-data-updated: ${KAFKA_TOPIC_MARKET_DATA_UPDATED:market-data-updated}
