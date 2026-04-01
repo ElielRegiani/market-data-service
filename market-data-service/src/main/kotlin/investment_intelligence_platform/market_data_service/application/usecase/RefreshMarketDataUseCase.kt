@@ -2,7 +2,7 @@ package investment_intelligence_platform.market_data_service.application.usecase
 
 import investment_intelligence_platform.market_data_service.domain.model.ExternalMarketData
 import investment_intelligence_platform.market_data_service.domain.model.MarketDataIndicators
-import investment_intelligence_platform.market_data_service.domain.model.MarketDataSnapshot
+import investment_intelligence_platform.market_data_service.domain.service.MarketDataNormalizer
 import investment_intelligence_platform.market_data_service.domain.service.TechnicalIndicatorsCalculator
 import investment_intelligence_platform.market_data_service.domain.repository.MarketDataHistoryRepositoryPort
 import investment_intelligence_platform.market_data_service.domain.repository.MarketDataWriteRepositoryPort
@@ -23,7 +23,7 @@ data class RefreshMarketDataUseCaseResult(
  * Application orchestration:
  * 1) fetch with provider failover
  * 2) normalize into MarketDataSnapshot
- * 3) enrich (indicators) - placeholder until calculator is implemented
+ * 3) enrich with technical indicators
  * 4) persist
  * 5) publish event
  */
@@ -33,6 +33,7 @@ class RefreshMarketDataUseCase(
     private val historyRepository: MarketDataHistoryRepositoryPort,
     private val writeRepository: MarketDataWriteRepositoryPort,
     private val eventPublisher: MarketDataEventPublisherPort,
+    private val normalizer: MarketDataNormalizer,
     private val indicatorsCalculator: TechnicalIndicatorsCalculator,
     private val appMarketDataProperties: AppMarketDataProperties
 ) {
@@ -69,11 +70,8 @@ class RefreshMarketDataUseCase(
         )
         val indicators = indicatorsCalculator.calculate(history, externalNonNull.price)
 
-        val snapshot = MarketDataSnapshot(
-            symbol = externalNonNull.symbol,
-            price = externalNonNull.price,
-            volume = externalNonNull.volume,
-            timestamp = externalNonNull.timestamp,
+        val normalized = normalizer.normalize(externalNonNull)
+        val snapshot = normalized.copy(
             indicators = MarketDataIndicators(
                 sma = indicators.sma,
                 ema = indicators.ema,

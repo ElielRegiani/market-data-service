@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: false
+  batch:
+    jdbc:
+      initialize-schema: always
+
+app:
+  market-data:
+    job:
+      enabled: false
+      cron: "0 10 18 * * MON-FRI"
+      zone: "America/Sao_Paulo"
+    providers:
+      active:
+        - stubA
+        - stubB
+    symbols: PETR4
+

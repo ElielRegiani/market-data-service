@@ -3,7 +3,6 @@ package investment_intelligence_platform.market_data_service.infrastructure.conf
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration
-import java.time.Duration
 
 @ConfigurationProperties(prefix = "app.market-data")
 data class AppMarketDataProperties(
@@ -13,7 +12,8 @@ data class AppMarketDataProperties(
 ) {
     data class JobProperties(
         val enabled: Boolean = true,
-        val fixedDelay: Duration = Duration.ofMinutes(5)
+        val cron: String = "0 10 18 * * MON-FRI",
+        val zone: String = "America/Sao_Paulo"
     )
 
     data class ProvidersProperties(

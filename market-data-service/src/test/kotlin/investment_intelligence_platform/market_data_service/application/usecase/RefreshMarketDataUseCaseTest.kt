@@ -5,6 +5,7 @@ import investment_intelligence_platform.market_data_service.domain.model.Externa
 import investment_intelligence_platform.market_data_service.domain.model.MarketDataSnapshot
 import investment_intelligence_platform.market_data_service.domain.repository.MarketDataHistoryRepositoryPort
 import investment_intelligence_platform.market_data_service.domain.repository.MarketDataWriteRepositoryPort
+import investment_intelligence_platform.market_data_service.domain.service.MarketDataNormalizer
 import investment_intelligence_platform.market_data_service.domain.service.MarketDataProvider
 import investment_intelligence_platform.market_data_service.domain.service.TechnicalIndicatorsCalculator
 import investment_intelligence_platform.market_data_service.infrastructure.config.AppMarketDataProperties
@@ -42,6 +43,7 @@ class RefreshMarketDataUseCaseTest {
             eventPublisher = object : MarketDataEventPublisherPort {
                 override fun publishMarketDataUpdated(snapshot: MarketDataSnapshot) = Unit
             },
+            normalizer = MarketDataNormalizer(),
             indicatorsCalculator = TechnicalIndicatorsCalculator(),
             appMarketDataProperties = AppMarketDataProperties(
                 symbols = listOf("PETR4"),

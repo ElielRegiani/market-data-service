@@ -1,9 +1,8 @@
 package investment_intelligence_platform.market_data_service.entrypoint.batch
 
-import investment_intelligence_platform.market_data_service.domain.model.MarketDataIndicators
-import investment_intelligence_platform.market_data_service.domain.model.MarketDataSnapshot
 import investment_intelligence_platform.market_data_service.domain.repository.MarketDataHistoryRepositoryPort
 import investment_intelligence_platform.market_data_service.domain.repository.MarketDataWriteRepositoryPort
+import investment_intelligence_platform.market_data_service.domain.service.MarketDataNormalizer
 import investment_intelligence_platform.market_data_service.domain.service.MarketDataProvider
 import investment_intelligence_platform.market_data_service.domain.service.TechnicalIndicatorsCalculator
 import investment_intelligence_platform.market_data_service.domain.messaging.MarketDataEventPublisherPort
@@ -24,6 +23,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.transaction.PlatformTransactionManager
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @Configuration
 @EnableBatchProcessing
@@ -51,8 +51,11 @@ class MarketDataJobConfig(
         .listener(object : JobExecutionListener {
             override fun beforeJob(jobExecution: JobExecution) = Unit
             override fun afterJob(jobExecution: JobExecution) {
-                val durationMs = (jobExecution.endTime?.toInstant()?.toEpochMilli() ?: System.currentTimeMillis()) -
-                    (jobExecution.startTime?.toInstant()?.toEpochMilli() ?: System.currentTimeMillis())
+                val durationMs = if (jobExecution.startTime != null && jobExecution.endTime != null) {
+                    ChronoUnit.MILLIS.between(jobExecution.startTime, jobExecution.endTime)
+                } else {
+                    0L
+                }
                 meterRegistry.timer("market_data.job.execution").record(durationMs, java.util.concurrent.TimeUnit.MILLISECONDS)
             }
         })
@@ -93,17 +96,12 @@ class MarketDataJobConfig(
     fun normalizeStep(
         jobRepository: JobRepository,
         transactionManager: PlatformTransactionManager,
-        state: MarketDataBatchState
+        state: MarketDataBatchState,
+        normalizer: MarketDataNormalizer
     ): Step = StepBuilder("normalizeStep", jobRepository)
         .tasklet({ _, _ ->
             state.fetched.forEach { (_, ext) ->
-                state.normalized[ext.symbol] = MarketDataSnapshot(
-                    symbol = ext.symbol,
-                    price = ext.price,
-                    volume = ext.volume,
-                    timestamp = ext.timestamp,
-                    indicators = MarketDataIndicators(null, null, null, null)
-                )
+                state.normalized[ext.symbol] = normalizer.normalize(ext)
             }
             RepeatStatus.FINISHED
         }, transactionManager)

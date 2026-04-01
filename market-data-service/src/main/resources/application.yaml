@@ -70,7 +70,8 @@ app:
     symbols: ${MARKET_DATA_SYMBOLS:PETR4,VALE3,ITUB4,BBDC4}
     job:
       enabled: ${MARKET_DATA_JOB_ENABLED:true}
-      fixed-delay: ${MARKET_DATA_JOB_FIXED_DELAY:PT5M}
+      cron: ${MARKET_DATA_JOB_CRON:0 10 18 * * MON-FRI}
+      zone: ${MARKET_DATA_JOB_ZONE:America/Sao_Paulo}
     providers:
       active: ${MARKET_DATA_PROVIDERS_ACTIVE:stubA,stubB}
   kafka:

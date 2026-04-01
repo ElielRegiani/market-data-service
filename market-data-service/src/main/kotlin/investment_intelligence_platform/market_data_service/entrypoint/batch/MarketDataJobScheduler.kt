@@ -5,6 +5,7 @@ import org.springframework.batch.core.Job
 import org.springframework.batch.core.JobParametersBuilder
 import org.springframework.batch.core.launch.JobLauncher
 import org.springframework.beans.factory.annotation.Qualifier
+import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -15,14 +16,23 @@ class MarketDataJobScheduler(
     @Qualifier("marketDataJob") private val marketDataJob: Job,
     private val appProperties: AppMarketDataProperties
 ) {
-    @Scheduled(fixedDelayString = "\${app.market-data.job.fixed-delay}")
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    @Scheduled(
+        cron = "\${app.market-data.job.cron}",
+        zone = "\${app.market-data.job.zone:America/Sao_Paulo}"
+    )
     fun schedule() {
         if (!appProperties.job.enabled) return
-        val params = JobParametersBuilder()
-            .addString("runId", UUID.randomUUID().toString())
-            .addLong("ts", System.currentTimeMillis())
-            .toJobParameters()
-        jobLauncher.run(marketDataJob, params)
+        try {
+            val params = JobParametersBuilder()
+                .addString("runId", UUID.randomUUID().toString())
+                .addLong("ts", System.currentTimeMillis())
+                .toJobParameters()
+            jobLauncher.run(marketDataJob, params)
+        } catch (e: Exception) {
+            logger.error("market_data_job_schedule_failed message={}", e.message, e)
+        }
     }
 }
 
