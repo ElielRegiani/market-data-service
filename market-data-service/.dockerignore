@@ -1,0 +1,25 @@
+# VCS
+.git
+.gitignore
+
+# Gradle — rebuilt inside the image
+.gradle
+build
+
+# IDE / OS
+.idea
+*.iml
+.vscode
+.DS_Store
+Thumbs.db
+
+# Logs / temp
+*.log
+*.tmp
+
+# Local env (never bake secrets)
+.env
+.env.*
+
+# Optional: keep context small (docs not needed to compile)
+HELP.md

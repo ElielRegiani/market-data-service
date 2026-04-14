@@ -68,6 +68,8 @@ docker compose up -d postgres zookeeper kafka
 docker compose up -d --build
 ```
 
+O `Dockerfile` e multi-stage: compila com Gradle dentro da imagem e copia apenas `build/libs/app.jar` (nome fixo via `tasks.bootJar`). Porta do processo: **8080** (`EXPOSE 8080`).
+
 ## Testes
 
 ```bash
